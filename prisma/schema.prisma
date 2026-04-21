@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Identity {
+  id            String          @id @default(uuid())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  identifiers   Identifier[]
+  encryptedData EncryptedData[]
+}
+
+model Identifier {
+  id         String   @id @default(uuid())
+  type       String   // e.g., 'email', 'cookie_id', 'wallet_address'
+  value      String   // the actual identifier value
+  identityId String
+  identity   Identity @relation(fields: [identityId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([type, value])
+}
+
+model EncryptedData {
+  id         String   @id @default(uuid())
+  identityId String
+  identity   Identity @relation(fields: [identityId], references: [id])
+  payload    String   // The encrypted JSON blob (base64 or hex)
+  iv         String   // Initialization vector for AES
+  authTag    String   // Authentication tag for GCM
+  createdAt  DateTime @default(now())
+}

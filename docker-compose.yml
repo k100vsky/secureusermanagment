@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: identity_storage
+    ports:
+      - "127.0.0.1:5432:5432" # Restricted to localhost (or VPN network)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal_net
+
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://admin:password@db:5432/identity_storage?schema=public"
+      ENCRYPTION_KEY: "f3a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9f3a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9"
+    depends_on:
+      - db
+    networks:
+      - internal_net
+
+  vpn:
+    image: kylemanna/openvpn
+    ports:
+      - "1194:1194/udp"
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./vpn-data:/etc/openvpn
+    networks:
+      - internal_net
+    restart: always
+
+  dashboard:
+    build:
+      context: ./admin-dashboard
+    ports:
+      - "3001:3001"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://api:3000" # Use internal Docker DNS
+    depends_on:
+      - api
+    networks:
+      - internal_net
+
+networks:
+  internal_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
