@@ -8,7 +8,7 @@ fi
 IP=$1
 
 echo "Initializing OpenVPN configuration..."
-docker compose run --rm vpn ovpn_genconfig -u udp://$IP
+docker compose run --rm vpn ovpn_genconfig -u tcp://$IP -r "172.19.0.0/16" -d
 
 echo "Initializing PKI (you will be asked for a passphrase for the CA)..."
 docker compose run --rm vpn ovpn_initpki
