@@ -1,14 +1,20 @@
 #!/bin/bash
 
+set -e
+
 if [ -z "$1" ]; then
-    echo "Usage: ./setup-vpn.sh <YOUR_SERVER_PUBLIC_IP>"
+    echo "Usage: ./setup-vpn.sh <YOUR_SERVER_PUBLIC_IP_OR_HOSTNAME> [PORT] [PROTO]"
+    echo "Example: ./setup-vpn.sh 203.0.113.10 1194 tcp"
     exit 1
 fi
 
-IP=$1
+HOST="$1"
+PORT="${2:-1194}"
+PROTO="${3:-tcp}"
+REMOTE_URL="${PROTO}://${HOST}:${PORT}"
 
-echo "Initializing OpenVPN configuration..."
-docker compose run --rm vpn ovpn_genconfig -u tcp://$IP -r "172.19.0.0/16" -d
+echo "Initializing OpenVPN configuration for ${REMOTE_URL}..."
+docker compose run --rm vpn ovpn_genconfig -u "${REMOTE_URL}" -r "172.19.0.0/16" -d
 
 echo "Initializing PKI (you will be asked for a passphrase for the CA)..."
 docker compose run --rm vpn ovpn_initpki
